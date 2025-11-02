@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ section }} Roster</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ section }} Section Roster</h1>
+            <p class="subtitle">Concert: {{ concert_date }}</p>
+        </header>
+
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}">← Back to Sections</a>
+        </nav>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <main>
+            {% if all_dates and all_dates|length > 1 %}
+            <div class="date-selector">
+                <label for="date-select">Select Concert Date:</label>
+                <select id="date-select" onchange="changeConcertDate(this.value)">
+                    {% for date in all_dates %}
+                    <option value="{{ date }}" {% if date == concert_date %}selected{% endif %}>
+                        {{ date }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('update_roster') }}">
+                <input type="hidden" name="section" value="{{ section }}">
+                <input type="hidden" name="concert_date" value="{{ concert_date }}">
+
+                <div class="roster-list">
+                    {% if members %}
+                        {% for member in members %}
+                        <div class="member-item">
+                            <input
+                                type="checkbox"
+                                id="member_{{ member.row }}"
+                                name="member_{{ member.row }}"
+                                {% if member.attending %}checked{% endif %}
+                            >
+                            <label for="member_{{ member.row }}">
+                                {{ member.name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="info-message">
+                            <p>No members found for {{ section }} section.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if members %}
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Attendance</button>
+                    <button type="button" class="btn-secondary" onclick="selectAll()">Select All</button>
+                    <button type="button" class="btn-secondary" onclick="deselectAll()">Clear All</button>
+                </div>
+                {% endif %}
+            </form>
+        </main>
+
+        <footer>
+            <p>Community Concert Band Roster System</p>
+        </footer>
+    </div>
+
+    <script>
+        function changeConcertDate(date) {
+            const section = "{{ section }}";
+            window.location.href = `/section/${encodeURIComponent(section)}?date=${encodeURIComponent(date)}`;
+        }
+
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.member-item input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = true);
+        }
+
+        function deselectAll() {
+            const checkboxes = document.querySelectorAll('.member-item input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+        }
+    </script>
+</body>
+</html>
