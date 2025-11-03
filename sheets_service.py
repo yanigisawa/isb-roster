@@ -260,6 +260,80 @@ class SheetsService:
             print(f"An error occurred: {error}")
             return []
 
+    def get_section_name_from_alias(self, alias: str) -> str:
+        """
+        Get the standard section name from an alias.
+
+        Args:
+            alias: The alias to look up
+        """
+        for section_name, aliases in self.SECTION_MAP.items():
+            if alias in aliases:
+                return section_name
+        return None
+
+    def get_all_members_with_attendance(self, concert_date_column_index: int) -> Dict[str, List[Dict]]:
+        """
+        Get all members grouped by section with their attendance status for a specific date.
+
+        Args:
+            concert_date_column_index: The column index of the concert date
+
+        Returns:
+            Dictionary with section names as keys and lists of members as values:
+            {
+                'Flute': [
+                    {
+                        'name': 'John Smith',
+                        'attending': True
+                    },
+                    ...
+                ],
+                ...
+            }
+        """
+        # Get all data
+        result = self.sheet.values().get(
+            spreadsheetId=self.spreadsheet_id,
+            range='A:Z'  # Get all columns
+        ).execute()
+
+        values = result.get('values', [])
+        if not values or len(values) < 2:
+            return {}
+
+        # Group members by section
+        section_members = {sn: [] for sn in self.SECTION_MAP.keys()}
+
+        # Start from row 2 (index 1), row 1 is header
+        for row in values[self.FIRST_DATA_ROW:]:
+            if len(row) < 2:
+                continue
+
+            section = row[self.SECTION_COLUMN].strip()
+            name = row[self.NAME_COLUMN].strip() if row else ''
+
+            section_name = self.get_section_name_from_alias(section)
+            attending = False
+            if len(row) > concert_date_column_index and row[concert_date_column_index]:
+                attending = row[concert_date_column_index].strip().lower() in ['yes', 'x', 'true', '1']
+
+            if not attending:
+                continue
+            section_members[section_name].append({
+                'name': name,
+                'attending': attending
+            })
+
+        # Sort members within each section by name
+        for section_name in section_members:
+            section_members[section_name] = sorted(
+                section_members[section_name],
+                key=lambda x: x['name']
+            )
+
+        return section_members
+
     def update_attendance(self, updates: List[Dict]) -> bool:
         """
         Update attendance for multiple members.

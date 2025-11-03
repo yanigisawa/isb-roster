@@ -14,14 +14,20 @@
             </header>
             {% if dates %}
                 <div class="info-box">
-                    <h3>
-                        Upcoming Concert
-                        {% if dates|length > 1 %}s{% endif %}
-                        :
-                    </h3>
+                    <h3>Upcoming Concerts</h3>
                     <ul class="date-list">
                         {% for date in dates %}<li>{{ date.date_str }}</li>{% endfor %}
                     </ul>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="{{ url_for("roster") }}"
+                           style="display: inline-block;
+                                  padding: 10px 20px;
+                                  background-color: #2196F3;
+                                  color: white;
+                                  text-decoration: none;
+                                  border-radius: 5px;
+                                  font-weight: bold">View Full Roster</a>
+                    </div>
                 </div>
             {% endif %}
             <main>

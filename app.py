@@ -61,7 +61,7 @@ def section_roster(section_name):
         members = service.get_all_members_for_section(section_name)
 
         return render_template(
-            'roster.html',
+            'roster_form.html',
             section=section_name,
             concert_date=concert_date,
             all_dates=dates,
@@ -106,6 +106,39 @@ def update_roster():
 
     # Redirect back to the section roster
     return redirect(url_for('section_roster', section_name=section, date=concert_date_column_index))
+
+
+@app.route('/roster')
+def roster():
+    """Display roster for all sections for a selected date."""
+    try:
+        service = get_sheets_service()
+        dates = service.get_concert_dates()
+
+        if not dates:
+            flash('No concert dates found in the spreadsheet', 'warning')
+            return redirect(url_for('index'))
+
+        return render_template(
+            'roster_view.html',
+            dates=dates
+        )
+
+    except Exception as e:
+        flash(f"Error loading roster: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+
+@app.route('/api/roster/<int:date_column_index>')
+def api_get_roster(date_column_index):
+    """API endpoint to get roster data for all sections for a specific date."""
+    service = get_sheets_service()
+    roster_data = service.get_all_members_with_attendance(date_column_index)
+
+    return {
+        'success': True,
+        'data': roster_data
+    }
 
 
 @app.route('/health')

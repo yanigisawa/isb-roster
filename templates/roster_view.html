@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Attending Members Roster</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <style>
+            .roster-container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .date-selector {
+                margin: 20px 0;
+                text-align: center;
+            }
+            .date-selector select {
+                padding: 10px 20px;
+                font-size: 16px;
+                border: 2px solid #4CAF50;
+                border-radius: 5px;
+                background-color: white;
+                cursor: pointer;
+            }
+            .loading {
+                text-align: center;
+                padding: 40px;
+                font-size: 18px;
+                color: #666;
+            }
+            .section-group {
+                margin: 30px 0;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .section-header {
+                background-color: #4CAF50;
+                color: white;
+                padding: 15px;
+                font-size: 20px;
+                font-weight: bold;
+            }
+            .section-members {
+                padding: 15px;
+                background-color: #f9f9f9;
+            }
+            .member-row {
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+                background-color: white;
+                margin-bottom: 5px;
+                border-radius: 4px;
+            }
+            .member-row:last-child {
+                border-bottom: none;
+            }
+            .member-name {
+                flex: 1;
+                font-size: 16px;
+            }
+            .member-status {
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .attending {
+                background-color: #4CAF50;
+                color: white;
+            }
+            .not-attending {
+                background-color: #f44336;
+                color: white;
+            }
+            .no-members {
+                text-align: center;
+                padding: 20px;
+                color: #999;
+                font-style: italic;
+            }
+            .error-message {
+                background-color: #f44336;
+                color: white;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Attending Members Roster</h1>
+                <p class="subtitle">View confirmed attendees for all sections</p>
+            </header>
+            <nav class="breadcrumb">
+                <a href="{{ url_for('index') }}">← Back to Home</a>
+            </nav>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <main class="roster-container">
+                <div class="date-selector">
+                    <label for="date-select"><strong>Select Concert Date:</strong></label>
+                    <select id="date-select">
+                        <option value="">-- Select a date --</option>
+                        {% for date in dates %}
+                            <option value="{{ date.column_index }}">{{ date.date_str }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="roster-content">
+                    <div class="info-message" style="text-align: center; padding: 40px; color: #999;">
+                        Please select a concert date to view the roster.
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <p>Community Concert Band Roster System</p>
+            </footer>
+        </div>
+
+        <script>
+            const dateSelect = document.getElementById('date-select');
+            const rosterContent = document.getElementById('roster-content');
+
+            dateSelect.addEventListener('change', async function() {
+                const dateColumnIndex = this.value;
+
+                if (!dateColumnIndex) {
+                    rosterContent.innerHTML = `
+                        <div class="info-message" style="text-align: center; padding: 40px; color: #999;">
+                            Please select a concert date to view the roster.
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Show loading state
+                rosterContent.innerHTML = '<div class="loading">Loading roster data...</div>';
+
+                try {
+                    // Fetch roster data from API
+                    const response = await fetch(`/api/roster/${dateColumnIndex}`);
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to load roster data');
+                    }
+
+                    // Render the roster
+                    renderRoster(result.data);
+
+                } catch (error) {
+                    console.error('Error fetching roster:', error);
+                    rosterContent.innerHTML = `
+                        <div class="error-message">
+                            Error loading roster data: ${error.message}
+                        </div>
+                    `;
+                }
+            });
+
+            function renderRoster(data) {
+                if (!data || Object.keys(data).length === 0) {
+                    rosterContent.innerHTML = `
+                        <div class="info-message" style="text-align: center; padding: 40px; color: #999;">
+                            No roster data available.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+
+                // Iterate through each section
+                for (const [sectionName, members] of Object.entries(data)) {
+                    // Skip empty sections
+                    if (!members || members.length === 0) {
+                        continue;
+                    }
+
+                    html += `
+                        <div class="section-group">
+                            <div class="section-header">${sectionName}</div>
+                            <div class="section-members">
+                    `;
+
+                    if (members.length === 0) {
+                        html += '<div class="no-members">No attending members in this section</div>';
+                    } else {
+                        members.forEach(member => {
+                            html += `
+                                <div class="member-row">
+                                    <div class="member-name">${member.name}</div>
+                                    <div class="member-status attending">Attending</div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (html === '') {
+                    rosterContent.innerHTML = `
+                        <div class="info-message" style="text-align: center; padding: 40px; color: #999;">
+                            No sections with members found.
+                        </div>
+                    `;
+                } else {
+                    rosterContent.innerHTML = html;
+                }
+            }
+        </script>
+    </body>
+</html>
