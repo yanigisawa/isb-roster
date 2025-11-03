@@ -36,15 +36,11 @@ def get_sheets_service():
 @app.route('/')
 def index():
     """Home page - display all sections."""
-    try:
-        service = get_sheets_service()
-        sections = service.get_all_sections()
-        dates = service.get_concert_dates()
+    service = get_sheets_service()
+    sections = service.get_all_sections()
+    dates = service.get_concert_dates()
 
-        return render_template('index.html', sections=sections, dates=dates)
-
-    except Exception as e:
-        return f"Error loading sections: {str(e)}", 500
+    return render_template('index.html', sections=sections, dates=dates)
 
 
 @app.route('/section/<section_name>')
@@ -62,7 +58,7 @@ def section_roster(section_name):
         # In the future, you could allow selecting which date
         concert_date = request.args.get('date', dates[0])
 
-        members = service.get_section_members(section_name, concert_date)
+        members = service.get_all_members_for_section(section_name)
 
         return render_template(
             'roster.html',
@@ -80,41 +76,36 @@ def section_roster(section_name):
 @app.route('/update', methods=['POST'])
 def update_roster():
     """Handle roster updates from section leaders."""
-    try:
-        section = request.form.get('section')
-        concert_date = request.form.get('concert_date')
+    section = request.form.get('section')
+    concert_date_column_index = int(request.form.get('concert_date'))
 
-        # Get all member rows for this section
-        service = get_sheets_service()
-        members = service.get_section_members(section, concert_date)
+    # Get all member rows for this section
+    service = get_sheets_service()
+    members = service.get_all_members_for_section(section)
 
-        # Prepare updates based on form data
-        updates = []
-        for member in members:
-            member_id = f"member_{member['row']}"
-            # Checkbox is checked if present in form data
-            attending = member_id in request.form
+    # Prepare updates based on form data
+    updates = []
+    for member in members:
+        member_id = f"member_{member['row']}"
+        # Checkbox is checked if present in form data
+        attending = member_id in request.form
 
-            updates.append({
-                'row': member['row'],
-                'concert_date': concert_date,
-                'attending': attending
-            })
+        updates.append({
+            'row': member['row'],
+            'concert_date_column_index': concert_date_column_index,
+            'attending': attending
+        })
 
-        # Apply updates
-        success = service.update_attendance(updates)
+    # Apply updates
+    success = service.update_attendance(updates)
 
-        if success:
-            flash(f'Roster updated successfully for {section}!', 'success')
-        else:
-            flash('Error updating roster', 'error')
+    if success:
+        flash(f'Roster updated successfully for {section}!', 'success')
+    else:
+        flash('Error updating roster', 'error')
 
-        # Redirect back to the section roster
-        return redirect(url_for('section_roster', section_name=section, date=concert_date))
-
-    except Exception as e:
-        flash(f"Error updating roster: {str(e)}", 'error')
-        return redirect(url_for('index'))
+    # Redirect back to the section roster
+    return redirect(url_for('section_roster', section_name=section, date=concert_date_column_index))
 
 
 @app.route('/health')

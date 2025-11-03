@@ -1,49 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Concert Band Roster - Section Selection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Concert Band Roster Manager</h1>
-            <p class="subtitle">Select your section to manage attendance</p>
-        </header>
-
-        {% if dates %}
-        <div class="info-box">
-            <h3>Upcoming Concert{% if dates|length > 1 %}s{% endif %}:</h3>
-            <ul class="date-list">
-                {% for date in dates %}
-                <li>{{ date }}</li>
-                {% endfor %}
-            </ul>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Concert Band Roster - Section Selection</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Concert Band Roster Manager</h1>
+                <p class="subtitle">Select your section to manage attendance</p>
+            </header>
+            {% if dates %}
+                <div class="info-box">
+                    <h3>
+                        Upcoming Concert
+                        {% if dates|length > 1 %}s{% endif %}
+                        :
+                    </h3>
+                    <ul class="date-list">
+                        {% for date in dates %}<li>{{ date.date_str }}</li>{% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <main>
+                <div class="sections-grid">
+                    {% if sections %}
+                        {% for section in sections %}
+                            <a href="{{ url_for('section_roster', section_name=section) }}"
+                               class="section-card">
+                                <h2>{{ section }}</h2>
+                                <p>Manage roster →</p>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="error-message">
+                            <p>No sections found. Please check your spreadsheet configuration.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </main>
+            <footer>
+                <p>Community Concert Band Roster System</p>
+            </footer>
         </div>
-        {% endif %}
-
-        <main>
-            <div class="sections-grid">
-                {% if sections %}
-                    {% for section in sections %}
-                    <a href="{{ url_for('section_roster', section_name=section) }}" class="section-card">
-                        <h2>{{ section }}</h2>
-                        <p>Manage roster →</p>
-                    </a>
-                    {% endfor %}
-                {% else %}
-                    <div class="error-message">
-                        <p>No sections found. Please check your spreadsheet configuration.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </main>
-
-        <footer>
-            <p>Community Concert Band Roster System</p>
-        </footer>
-    </div>
-</body>
+    </body>
 </html>
