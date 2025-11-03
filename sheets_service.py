@@ -153,7 +153,23 @@ class SheetsService:
 
         return future_dates
 
-    def get_all_members_for_section(self, section_name) -> List[Dict]:
+    def _is_in_section(self, section: str, section_name: str) -> bool:
+        """
+        Check if a given section string matches the standard section name
+        using the SECTION_MAP.
+
+        Args:
+            section: The section string from the sheet
+            section_name: The standard section name to check against
+        Returns:
+            True if the section matches the section_name, False otherwise
+        """
+        for alias in self.SECTION_MAP.get(section_name, []):
+            if section == alias:
+                return True
+        return False
+
+    def get_all_members_for_section(self, section_name: str, concert_date_column_index: int) -> List[Dict]:
         """
         Get all members for a specific section name.
 
@@ -186,16 +202,15 @@ class SheetsService:
             section = row[self.SECTION_COLUMN].strip()
             name = row[self.NAME_COLUMN].strip() if row else ''
 
-            # Find which section this member belongs to
-            for alias in self.SECTION_MAP.get(section_name, []):
-                if section != alias:
-                    continue
-                members.append({
-                    'name': name,
-                    'row': idx,
-                    'email': row[self.EMAIL_COLUMN].strip() if len(row) > 2 else ''
-                })
-                break
+            if not self._is_in_section(section, section_name):
+                continue
+
+            members.append({
+                'name': name,
+                'row': idx,
+                'email': row[self.EMAIL_COLUMN].strip() if len(row) > 2 else '',
+                'attending': row[concert_date_column_index].strip().lower() in ['yes', 'x', 'true', '1'] if len(row) > concert_date_column_index else False
+            })
 
         return sorted(members, key=lambda x: x['name'])
 

@@ -46,49 +46,46 @@ def index():
 @app.route('/section/<section_name>')
 def section_roster(section_name):
     """Display roster for a specific section."""
-    try:
-        service = get_sheets_service()
-        dates = service.get_concert_dates()
+    service = get_sheets_service()
+    dates = service.get_concert_dates()
 
-        if not dates:
-            flash('No concert dates found in the spreadsheet', 'warning')
-            return redirect(url_for('index'))
-
-        # Use the first concert date by default
-        # In the future, you could allow selecting which date
-        concert_date = request.args.get('date', dates[0])
-
-        members = service.get_all_members_for_section(section_name)
-
-        return render_template(
-            'roster_form.html',
-            section=section_name,
-            concert_date=concert_date,
-            all_dates=dates,
-            members=members
-        )
-
-    except Exception as e:
-        flash(f"Error loading roster: {str(e)}", 'error')
+    if not dates:
+        flash('No concert dates found in the spreadsheet', 'warning')
         return redirect(url_for('index'))
+
+    # Use the first concert date by default
+    # In the future, you could allow selecting which date
+    concert_date_column_index = request.args.get('date', dates[0]['column_index'])
+    print(f"Selected concert date column index: {concert_date_column_index}")
+
+    members = service.get_all_members_for_section(section_name, concert_date_column_index)
+
+    return render_template(
+        'roster_form.html',
+        section=section_name,
+        concert_date=concert_date_column_index,
+        all_dates=dates,
+        members=members
+    )
 
 
 @app.route('/update', methods=['POST'])
 def update_roster():
     """Handle roster updates from section leaders."""
-    section = request.form.get('section')
-    concert_date_column_index = int(request.form.get('concert_date'))
+    section = request.form.get('section', "")
+    concert_date_column_index = int(request.form.get('concert_date', -1))
 
+    print(f"Updating roster for section: {section}, concert date column index: {concert_date_column_index}")
     # Get all member rows for this section
     service = get_sheets_service()
-    members = service.get_all_members_for_section(section)
+    members = service.get_all_members_for_section(section, concert_date_column_index)
 
     # Prepare updates based on form data
     updates = []
     for member in members:
         member_id = f"member_{member['row']}"
         # Checkbox is checked if present in form data
-        attending = member_id in request.form
+        attending = request.form.get(member_id) == 'true'
 
         updates.append({
             'row': member['row'],
@@ -105,28 +102,25 @@ def update_roster():
         flash('Error updating roster', 'error')
 
     # Redirect back to the section roster
-    return redirect(url_for('section_roster', section_name=section, date=concert_date_column_index))
+    return redirect(
+        url_for('section_roster', section_name=section)
+    )
 
 
 @app.route('/roster')
 def roster():
     """Display roster for all sections for a selected date."""
-    try:
-        service = get_sheets_service()
-        dates = service.get_concert_dates()
+    service = get_sheets_service()
+    dates = service.get_concert_dates()
 
-        if not dates:
-            flash('No concert dates found in the spreadsheet', 'warning')
-            return redirect(url_for('index'))
-
-        return render_template(
-            'roster_view.html',
-            dates=dates
-        )
-
-    except Exception as e:
-        flash(f"Error loading roster: {str(e)}", 'error')
+    if not dates:
+        flash('No concert dates found in the spreadsheet', 'warning')
         return redirect(url_for('index'))
+
+    return render_template(
+        'roster_view.html',
+        dates=dates
+    )
 
 
 @app.route('/api/roster/<int:date_column_index>')
