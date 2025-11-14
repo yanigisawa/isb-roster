@@ -40,6 +40,30 @@
                 padding: 15px;
                 font-size: 20px;
                 font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .copy-button {
+                background-color: white;
+                color: #4CAF50;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                transition: background-color 0.3s;
+            }
+            .copy-button:hover {
+                background-color: #f0f0f0;
+            }
+            .copy-button:active {
+                background-color: #e0e0e0;
+            }
+            .copy-success {
+                background-color: #45a049 !important;
+                color: white !important;
             }
             .section-members {
                 padding: 15px;
@@ -194,7 +218,10 @@
 
                     html += `
                         <div class="section-group">
-                            <div class="section-header">${sectionName}</div>
+                            <div class="section-header">
+                                <span>${sectionName}</span>
+                                <button class="copy-button" onclick="copySection('${sectionName}', this)">Copy</button>
+                            </div>
                             <div class="section-members">
                     `;
 
@@ -226,6 +253,56 @@
                 } else {
                     rosterContent.innerHTML = html;
                 }
+            }
+
+            function copySection(sectionName, button) {
+                // Find all section groups on the page
+                const allSections = document.querySelectorAll('.section-group');
+
+                // Build the text to copy - all sections
+                let text = '';
+
+                allSections.forEach((sectionGroup, index) => {
+                    // Add spacing between sections (except before first section)
+                    if (index > 0) {
+                        text += '\n';
+                    }
+
+                    // Get section name
+                    const sectionHeader = sectionGroup.querySelector('.section-header span');
+                    const currentSectionName = sectionHeader.textContent;
+
+                    // Add section name
+                    text += currentSectionName + '\n';
+
+                    // Add dividing line
+                    text += '─'.repeat(currentSectionName.length) + '\n';
+
+                    // Get all member rows for this section
+                    const memberRows = sectionGroup.querySelectorAll('.member-row');
+
+                    memberRows.forEach(row => {
+                        const memberName = row.querySelector('.member-name').textContent;
+                        text += memberName + '\n';
+                    });
+                });
+
+                // Copy to clipboard
+                navigator.clipboard.writeText(text.trim()).then(() => {
+                    // Show success feedback
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.classList.add('copy-success');
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('copy-success');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
             }
         </script>
     </body>

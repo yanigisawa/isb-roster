@@ -18,7 +18,8 @@ class SheetsService:
 
     SECTION_COLUMN = 0  # Section is in column A (index 0)
     NAME_COLUMN = 1  # Name is in column B (index 1)
-    EMAIL_COLUMN = 4  # Email is in column E (index 4)
+    EMAIL_COLUMN = 3  # Email is in column D (index 3)
+    ORDER_COLUMN = 4  # Order is in column E (index 4)
     DATE_COLUMN_START = 9  # Dates start from column J (index 9)
     FIRST_DATA_ROW = 1  # Data starts from row 2 (index 1)
     JUNE = 6
@@ -127,8 +128,6 @@ class SheetsService:
         header = values[0]
         dates = [date.strip() for date in header[self.DATE_COLUMN_START:] if date.strip()]
 
-        print("All Dates from Sheet:", dates)
-
         # Filter out past dates
         today = date.today()
         future_dates = []
@@ -213,67 +212,6 @@ class SheetsService:
             })
 
         return sorted(members, key=lambda x: x['name'])
-
-    def get_section_members(self, section: str, concert_date: str) -> List[Dict]:
-        """
-        Get all members for a specific section with their attendance status.
-
-        Args:
-            section: The section name (e.g., 'Flute', 'Clarinet')
-            concert_date: The concert date to check attendance for
-
-        Returns:
-            List of dictionaries with member info:
-            [
-                {
-                    'name': 'John Smith',
-                    'row': 2,
-                    'attending': True
-                },
-                ...
-            ]
-        """
-        try:
-            # Get all data
-            result = self.sheet.values().get(
-                spreadsheetId=self.spreadsheet_id,
-                range='A:Z'  # Get all columns
-            ).execute()
-
-            values = result.get('values', [])
-            if not values or len(values) < 2:
-                return []
-
-            # Find the column index for the concert date
-            header = values[0]
-            try:
-                date_col_idx = header.index(concert_date)
-            except ValueError:
-                print(f"Concert date '{concert_date}' not found in header")
-                return []
-
-            members = []
-            # Start from row 2 (index 1), row 1 is header
-            for idx, row in enumerate(values[1:], start=2):
-                # Check if this row belongs to the requested section
-                if len(row) > 1 and row[1].strip() == section:
-                    name = row[0].strip() if row else ''
-                    # Check attendance status for this concert date
-                    attending = False
-                    if len(row) > date_col_idx and row[date_col_idx]:
-                        attending = row[date_col_idx].strip().lower() in ['yes', 'x', 'true', '1']
-
-                    members.append({
-                        'name': name,
-                        'row': idx,
-                        'attending': attending
-                    })
-
-            return members
-
-        except HttpError as error:
-            print(f"An error occurred: {error}")
-            return []
 
     def get_section_name_from_alias(self, alias: str) -> str:
         """
