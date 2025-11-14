@@ -169,10 +169,6 @@ main {
     background: #f8f9fa;
 }
 
-.member-item:last-child {
-    border-bottom: none;
-}
-
 .member-item input[type="checkbox"] {
     width: 24px;
     height: 24px;

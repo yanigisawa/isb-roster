@@ -7,11 +7,20 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
         <style>
             .roster-sections {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
+                display: flex;
+                flex-direction: column;
                 gap: 2rem;
                 margin: 2rem 0;
             }
+
+            @media (min-width: 768px) {
+                .roster-sections {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 2rem;
+                }
+            }
+
             .roster-section {
                 border: 2px solid #ddd;
                 border-radius: 8px;
