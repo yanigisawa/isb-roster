@@ -122,40 +122,34 @@
                 <p class="subtitle">View confirmed attendees for all sections</p>
             </header>
             <nav class="breadcrumb">
-                <a href="{{ url_for('index') }}">← Back to Home</a>
+                <a href="{{ url_for("index") }}">← Back to Home</a>
             </nav>
-
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
+                    {% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}
                 {% endif %}
             {% endwith %}
-
             <main class="roster-container">
                 <div class="date-selector">
-                    <label for="date-select"><strong>Select Concert Date:</strong></label>
+                    <label for="date-select">
+                        <strong>Select Concert Date:</strong>
+                    </label>
                     <select id="date-select">
                         <option value="">-- Select a date --</option>
-                        {% for date in dates %}
-                            <option value="{{ date.column_index }}">{{ date.date_str }}</option>
-                        {% endfor %}
+                        {% for date in dates %}<option value="{{ date.column_index }}">{{ date.date_str }}</option>{% endfor %}
                     </select>
                 </div>
-
                 <div id="roster-content">
-                    <div class="info-message" style="text-align: center; padding: 40px; color: #999;">
-                        Please select a concert date to view the roster.
-                    </div>
+                    <div class="info-message"
+                         style="text-align: center;
+                                padding: 40px;
+                                color: #999">Please select a concert date to view the roster.</div>
                 </div>
             </main>
-
             <footer>
-                <p>Community Concert Band Roster System</p>
+                <p>ISB Section Roster System</p>
             </footer>
         </div>
-
         <script>
             const dateSelect = document.getElementById('date-select');
             const rosterContent = document.getElementById('roster-content');
